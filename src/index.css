@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    /* Светло-серый фон и шрифт Inter как в ТЗ */
+    @apply bg-gray-50 text-gray-800 antialiased font-sans;
+    margin: 0;
+    display: block; /* Убираем Vite-центрирование */
+  }
+}
+
+/* Минималистичный скроллбар */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { 
+  background: #d1d5db; 
+  border-radius: 10px; 
+}
+
+/* Анимация перехода между вкладками */
+.tab-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
