@@ -1,7 +1,7 @@
 
 # ✨ PromptAGG — Внутренний сервис генерации промтов
 
-Веб-сервис для команды «МНС-Обувь», предназначенный для ведения контент-плана и автоматической сборки сложных ТЗ (промтов) для нейросетей NanoBanana и QwenChat.
+Веб-сервис для, предназначенный для ведения контент-плана и автоматической сборки сложных ТЗ (промтов) для нейросетей по генерации медиа и текста
 
 ---
 
@@ -9,9 +9,9 @@
 
 Проект построен по принципу монорепозитория:
 
-PromptAGG/
-│
-├── backend/   # FastAPI (Python) + SQLModel + PostgreSQL
+PromptAGG/<br>
+│<br>
+├── backend/   # FastAPI (Python) + SQLModel + PostgreSQL<br>
 └── frontend/  # React (Vite) + Tailwind CSS
 
 ---
@@ -27,28 +27,28 @@ PromptAGG/backend/
 
 ### Перейди в папку
 
-cd backend
+`cd backend`
 
 ### Создай и активируй виртуальное окружение
 
-python -m venv venv
+`python -m venv venv`
 
 Windows:
-venv\Scripts\activate
+`venv\Scripts\activate`
 
 Mac / Linux:
-source venv/bin/activate
+`source venv/bin/activate`
 
 ### Установи зависимости
 
-pip install -r requirements.txt
+`pip install -r requirements.txt`
 
 Основные библиотеки:
 fastapi, sqlmodel, uvicorn, python-dotenv, psycopg2-binary
 
 ### Запуск сервера
 
-uvicorn app.main:app --reload
+`uvicorn app.main:app --reload`
 
 ---
 
@@ -61,32 +61,32 @@ PromptAGG/frontend/
 
 ### Перейди в папку
 
-cd ../frontend
+`cd ../frontend`
 
 ### Установи пакеты
 
-npm install
+`npm install`
 
 Ключевые пакеты:
 axios (для связи с бэком), lucide-react (иконки), tailwindcss
 
 ### Запуск в режиме разработки
 
-npm run dev
+`npm run dev`
 
 ---
 
-# ⚙️ Настройка окружения
+## ⚙️ Настройка окружения
 
 Для работы базы данных и связи с API создай файлы .env
 
-backend/.env
+# backend/.env
 
-DATABASE_URL=postgresql://user:pass@localhost:5432/promptagg
+`DATABASE_URL=postgresql://user:pass@localhost:5432/promptagg`
 
-frontend/.env
+# frontend/.env
 
-VITE_API_URL=http://127.0.0.1:8000
+`VITE_API_URL=http://127.0.0.1:8000`
 
 ---
 
@@ -98,9 +98,3 @@ VITE_API_URL=http://127.0.0.1:8000
 [ ] Деплой на Railway
 
 ---
-
-Совет по разработке:
-
-Если используешь VS Code, убедись, что при работе с файлами бэкенда выбран интерпретатор из папки backend/venv/bin/python,
-иначе IDE будет подсвечивать импорты sqlmodel красным.
-
