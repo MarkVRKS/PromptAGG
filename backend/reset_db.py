@@ -1,3 +1,6 @@
+# промежуточный файл чтобы дропать бдшки
+# а то у меня бэк ворчит, что после изменения пайплайна остались истории промптов на бэке
+
 from app.core.database import engine
 from sqlalchemy import text
 from sqlmodel import SQLModel

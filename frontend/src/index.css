@@ -1,30 +1,123 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  body {
-    /* Светло-серый фон и шрифт Inter как в ТЗ */
-    @apply bg-gray-50 text-gray-800 antialiased font-sans;
-    margin: 0;
-    display: block; /* Убираем Vite-центрирование */
-  }
+/* 1. ПОДКЛЮЧАЕМ ПИКСЕЛЬНЫЙ ШРИФТ */
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+:root {
+  --bg-app: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-input: #f1f5f9;
+  --bg-column: rgba(241, 245, 249, 0.5);
+  --border-main: #e2e8f0;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --gold: #f59e0b;
+  --font-pixel: 'VT323', monospace;
 }
 
-/* Минималистичный скроллбар */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { 
-  background: #d1d5db; 
-  border-radius: 10px; 
+[data-theme='dark'] {
+  --bg-app: #020617;
+  --bg-card: #0f172a;
+  --bg-input: #1e293b;
+  --bg-column: rgba(15, 23, 42, 0.6);
+  --border-main: #1e293b;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --gold: #fbbf24;
 }
 
-/* Анимация перехода между вкладками */
-.tab-fade-in {
-  animation: fadeIn 0.3s ease-in-out;
+/* 2. ТЕМА PIXEL SPACE (ПО РЕФЕРЕНСУ) */
+[data-theme='pixel'] {
+  --bg-app: #030005;     /* Глубокий космос */
+  --bg-card: #0a000f;    /* Темно-фиолетовый кристалл */
+  --bg-input: #0f0019;   /* Поля ввода */
+  --bg-column: rgba(10, 0, 15, 0.4);
+  --border-main: #1d002e; 
+  --text-main: #00ffff;  /* Неоновый Cyan */
+  --text-muted: #008b8b; 
+  --gold: #00ffff;       /* Акцентный цвет - тоже неон */
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(5px); }
-  to { opacity: 1; transform: translateY(0); }
+/* 3. ГЛОБАЛЬНЫЙ ШРИФТ ДЛЯ PIXEL SPACE */
+body[data-theme='pixel'] * {
+  font-family: var(--font-pixel) !important;
+  letter-spacing: 0.05em;
+}
+
+body {
+  margin: 0;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* ФУНКЦИОНАЛЬНЫЕ КЛАССЫ */
+.theme-card { background-color: var(--bg-card); border: 1px solid var(--border-main); }
+.hide-scroll::-webkit-scrollbar { display: none; }
+
+/* Кастомный скролл для идей и библиотеки */
+.ideas-scroll::-webkit-scrollbar { width: 4px; }
+.ideas-scroll::-webkit-scrollbar-track { background: transparent; }
+.ideas-scroll::-webkit-scrollbar-thumb { background: var(--border-main); border-radius: 10px; }
+
+/* АНИМАЦИИ */
+
+/* Пульсация лампочки в Idea Vault */
+@keyframes bulb-glow {
+  0%, 100% { filter: drop-shadow(0 0 2px var(--gold)); opacity: 0.7; }
+  50% { filter: drop-shadow(0 0 10px var(--gold)); opacity: 1; }
+}
+.animate-bulb { animation: bulb-glow 2s infinite ease-in-out; }
+
+/* Оптимизированный Void (задний фон в библиотеке) */
+@keyframes void-pulse {
+  0%, 100% { opacity: 0.05; transform: scale(1); }
+  50% { opacity: 0.12; transform: scale(1.05); }
+}
+.animate-void {
+  animation: void-pulse 8s infinite ease-in-out;
+  will-change: opacity, transform;
+}
+
+/* Эффект карточки идеи (Облегченный Glassmorphism) */
+.idea-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-main);
+  transition: all 0.25s ease-out;
+  will-change: transform;
+}
+
+.idea-card:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--gold);
+}
+
+/* Свечение карт в библиотеке (Оптимизировано) */
+@keyframes card-glow {
+  0%, 100% { border-color: var(--border-main); box-shadow: none; }
+  50% { border-color: var(--gold); box-shadow: 0 0 15px rgba(0, 255, 255, 0.15); }
+}
+
+.library-prompt-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-main);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform, box-shadow;
+}
+
+.library-prompt-card:hover {
+  transform: translateY(-5px);
+  animation: card-glow 3s infinite ease-in-out;
+}
+
+/* Матричный стиль для кода */
+pre.matrix-style {
+  background: rgba(0, 0, 0, 0.3);
+  color: var(--text-muted);
+  transition: color 0.2s ease;
+}
+.group:hover pre.matrix-style {
+  color: var(--text-main);
 }

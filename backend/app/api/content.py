@@ -1,17 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException #импорт создания группы маршрутов, механизма внедрения зависимостей, возврат HTTP-ошибок
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
-from typing import List
+from typing import List, Optional
 from ..core.database import get_session
 from ..models.content_plan import ContentPlan, Idea, PromptTemplate
 
 router = APIRouter(prefix="/content-plan", tags=["Content Plan"])
-# я тегаю чтобы Swagger был заполнен
 
-# эндпоинты для постов. канбан-формат
+# --- эндпоинты для постов ---
 @router.get("/", response_model=List[ContentPlan])
 def get_posts(project_id: str = "mns", session: Session = Depends(get_session)):
     statement = select(ContentPlan).where(ContentPlan.project_id == project_id)
-    # ИСПРАВЛЕНО: Вызываем exec у сессии
     results = session.exec(statement).all()
     return results
 
@@ -37,11 +35,19 @@ def update_post(post_id: int, update_post: ContentPlan, session: Session = Depen
     session.refresh(post)
     return post
 
-# эндпоинты для багажа идей
+@router.delete("/{post_id}")
+def delete_post(post_id: int, session: Session = Depends(get_session)):
+    post = session.get(ContentPlan, post_id)
+    if post:
+        session.delete(post)
+        session.commit()
+    return {"message": "Пост удален"}
+
+# --- эндпоинты для багажа идей ---
 @router.get("/ideas/", response_model=List[Idea])
-def get_idea(project_id: str="mns", session: Session = Depends(get_session)):
+def get_idea(project_id: str = "mns", session: Session = Depends(get_session)):
     statement = select(Idea).where(Idea.project_id == project_id)
-    results = statement.exec(statement).all()
+    results = session.exec(statement).all()
     return results
 
 @router.post("/ideas/", response_model=Idea)
@@ -59,11 +65,11 @@ def delete_idea(idea_id: int, session: Session = Depends(get_session)):
         session.commit()
     return {"message": "Идея удалена"}
 
-# эндпоинты для библиотеки промптов
+# --- эндпоинты для библиотеки промптов ---
 @router.get("/library/", response_model=List[PromptTemplate])
-def get_library(prompt: PromptTemplate, session: Session = Depends(get_session)):
+def get_library(session: Session = Depends(get_session)):
     statement = select(PromptTemplate)
-    results = statement.exec(statement).all() 
+    results = session.exec(statement).all() 
     return results
 
 @router.post("/library/", response_model=PromptTemplate)
