@@ -1,10 +1,11 @@
 import React, { useState, useEffect, memo, useMemo } from 'react';
 import { 
   FolderKanban, CalendarDays, Lightbulb, Library, 
-  Settings2, X, Save, Trash2, ChevronDown, Copy, BookOpen, Sparkles, Plus, Send, Zap, Edit3
+  Settings2, X, Save, Trash2, ChevronDown, Copy, BookOpen, Sparkles, Plus, Send, Zap, Edit3, Layers
 } from 'lucide-react';
 import api from './api';
 import Board from './Board';
+import Tools from './Tools'; // Подключаем новый файл
 import SettingsModal from './SettingsModal';
 
 // --- КОМПОНЕНТ СЕЛЕКТА ДЛЯ ШАПКИ ---
@@ -201,6 +202,7 @@ const LibraryModal = memo(({ isOpen, onClose, library, onAdd, onUpdate, onDelete
 // --- ГЛАВНЫЙ КОМПОНЕНТ ---
 export default function App() {
   const [projectId, setProjectId] = useState('mns');
+  const [activeTab, setActiveTab] = useState('board'); // Состояние для вкладок: 'board' или 'tools'
   const [theme, setTheme] = useState('light');
   const [posts, setPosts] = useState([]);
   const [ideas, setIdeas] = useState([]);
@@ -226,7 +228,6 @@ export default function App() {
     try { const res = await api.getLibrary(); setLibrary(res.data || []); } catch (e) { console.error(e); }
   };
 
-  // --- ЛОГИКА БИБЛИОТЕКИ ---
   const handleAddPrompt = async (data) => {
     await api.createLibraryPrompt(data);
     fetchLibrary();
@@ -243,7 +244,6 @@ export default function App() {
     fetchLibrary();
   };
 
-  // --- ЛОГИКА ИДЕЙ ---
   const handleAddIdea = async () => {
     if (!newIdeaText.trim()) return;
     const res = await api.createIdea({ project_id: projectId, text: newIdeaText });
@@ -252,7 +252,6 @@ export default function App() {
 
   const handleDeleteIdea = async (id) => { await api.deleteIdea(id); setIdeas(ideas.filter(i => i.id !== id)); };
 
-  // --- ИЗОЛЯЦИЯ ДОСКИ (ФИКС ОТ ЛАГОВ) ---
   const boardView = useMemo(() => (
     <Board projectId={projectId} posts={posts} refreshPosts={fetchData} />
   ), [projectId, posts]);
@@ -263,12 +262,31 @@ export default function App() {
         <div className="flex items-center gap-5">
           <h1 className="text-2xl font-black bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent tracking-tight">PromptAGG</h1>
           <div className="h-6 w-px bg-[var(--border-main)]"></div>
+          
+          {/* ВЫБОР ПРОЕКТА */}
           <div className="flex items-center gap-2 bg-[var(--bg-input)] p-1 rounded-xl border border-[var(--border-main)]">
             {['mns', 'moshelovka', 'nelimita'].map(id => (
               <button key={id} onClick={() => setProjectId(id)} className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${projectId === id ? 'bg-[var(--bg-card)] text-purple-600 shadow-sm' : 'text-slate-400'}`}>{id}</button>
             ))}
           </div>
         </div>
+
+        {/* --- ПЕРЕКЛЮЧАТЕЛЬ ВКЛАДОК (ЦЕНТР) --- */}
+        <div className="flex items-center bg-[var(--bg-input)] p-1 rounded-2xl border border-[var(--border-main)] shadow-inner">
+           <button 
+             onClick={() => setActiveTab('board')}
+             className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase transition-all ${activeTab === 'board' ? 'bg-slate-900 text-white shadow-lg' : 'text-slate-400 hover:text-[var(--text-main)]'}`}
+           >
+             <CalendarDays className="w-3.5 h-3.5" /> Календарь
+           </button>
+           <button 
+             onClick={() => setActiveTab('tools')}
+             className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black uppercase transition-all ${activeTab === 'tools' ? 'bg-purple-600 text-white shadow-lg' : 'text-slate-400 hover:text-[var(--text-main)]'}`}
+           >
+             <Layers className="w-3.5 h-3.5" /> Нейронки
+           </button>
+        </div>
+
         <div className="flex items-center gap-4">
           <button onClick={() => setIsIdeasOpen(!isIdeasOpen)} className="flex items-center gap-2.5 text-sm font-bold text-amber-500 bg-amber-500/10 dark:bg-amber-500/10 px-5 py-3 rounded-xl border border-amber-500/20 hover:border-amber-500/50 hover:bg-amber-500/20 active:scale-95 transition-all">
             <Lightbulb className={`w-4 h-4 ${ideas.length > 0 ? 'animate-bulb text-amber-400' : ''}`} /> Багаж 
@@ -281,14 +299,14 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 overflow-x-auto overflow-y-hidden p-6 flex gap-4 items-start relative">
-        {boardView}
+      {/* --- КОНТЕНТ (УСЛОВНЫЙ РЕНДЕРИНГ) --- */}
+      <main className="flex-1 overflow-x-auto overflow-y-auto p-6 flex gap-4 items-start relative ideas-scroll">
+        {activeTab === 'board' ? boardView : <Tools />}
       </main>
 
-      {/* --- ИНТЕРАКТИВНОЕ НЕЙРО-ХРАНИЛИЩЕ (IDEA VAULT) --- */}
+      {/* --- IDEA VAULT --- */}
       <div className={`fixed right-0 top-[73px] h-[calc(100vh-73px)] w-[420px] bg-[var(--bg-card)] shadow-[-30px_0_50px_rgba(0,0,0,0.3)] border-l border-[var(--border-main)] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] z-30 flex flex-col transform-gpu will-change-transform ${isIdeasOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         
-        {/* Шапка архива */}
         <div className="p-6 border-b border-[var(--border-main)] flex justify-between items-center relative overflow-hidden shrink-0">
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-amber-500/10 blur-3xl rounded-full pointer-events-none"></div>
           <div className="flex items-center gap-4 relative z-10">
@@ -305,7 +323,6 @@ export default function App() {
           </button>
         </div>
 
-        {/* Список идей */}
         <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-[var(--bg-app)]/50 ideas-scroll relative">
           <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(var(--border-main) 1px, transparent 1px)', backgroundSize: '20px 20px', opacity: 0.3 }}></div>
           
@@ -336,7 +353,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Кибер-терминал для ввода */}
         <div className="p-6 border-t border-[var(--border-main)] bg-[var(--bg-card)] relative z-10">
           <div className="relative group mb-4">
             <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-amber-500/50 rounded-tl-lg opacity-0 group-focus-within:opacity-100 transition-all duration-300"></div>
