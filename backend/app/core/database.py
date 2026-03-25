@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # RAILWAY автоматически предоставляет DATABASE_URL
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:123@localhost:5432/promptagg")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:123@localhost:5432/laptoppromptagg")
 
 # движок SQLAlchemy для взаимодействия с базой данных
 engine = create_engine(DATABASE_URL, echo=True)
