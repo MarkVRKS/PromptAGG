@@ -17,11 +17,15 @@ app = FastAPI(
     lifespan=lifespan
     )
 
+origins = [
+    "http://localhost:5173",         
+    "https://promptagg-web.vercel.app/",  
+]
 # настройка CORS, чтобы REACT-фронт мог делать запросы к бэку
 # CORS - Cross-Origin Resourses Sharing (совместное испльзование ресурсов между источниками)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], #список источников, которым разрешено отправлять запросы из других источников(на продакшене лучше указать конкретный адрес)
+    allow_origins=origins,
     allow_credentials=True, #файлы куки должны поддерживаться для междоменных запросов
     allow_methods=["*"], #Конкреетные методы HTTP(GET, POST) (я разрешил все)
     allow_headers=["*"] #конкретные HTTP-заголовки (я разрешил все)
