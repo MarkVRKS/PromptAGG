@@ -1,5 +1,5 @@
 import React, { useState, memo, useRef, useEffect } from 'react';
-import { Trash2, Link, CheckCircle2, Sparkles, Target, Zap, LayoutList, Copy, ExternalLink, ArrowRight, Layers, UserCircle, MessageSquareQuote, ChevronDown, Plus, Check, BookOpen, Save, X } from 'lucide-react';
+import { Trash2, Link, CheckCircle2, Sparkles, Target, Zap, LayoutList, Copy, ExternalLink, ArrowRight, Layers, UserCircle, MessageSquareQuote, ChevronDown, Plus, Check, BookOpen, Save, X, Activity } from 'lucide-react';
 import api from './api';
 import { platformsInfo, getEmptyPlatform } from './constants';
 
@@ -351,26 +351,6 @@ const PostCard = memo(function PostCard({ post, refreshPosts, refreshLibrary, on
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <label className="text-xs font-black text-[var(--accent)] uppercase tracking-[0.2em] flex items-center gap-2 ml-1"><LayoutList className="w-4 h-4" /> Тема для {activePlatform}</label>
-
-          {/* Селектор оценки эффективности */}
-          <div className="flex items-center gap-2">
-            <label className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Оценка:</label>
-            <select
-              value={localPost.engagement_level || ""}
-              onChange={(e) => {
-                const updated = { ...localPost, engagement_level: e.target.value };
-                setLocalPost(updated);
-                api.updatePost(localPost.id, updated).catch(err => console.error("Ошибка сохранения:", err));
-              }}
-              className="bg-[var(--bg-card)] border-2 border-[var(--border-main)] rounded-xl px-4 py-2 text-sm font-bold text-[var(--text-main)] outline-none hover:border-[var(--accent)] transition-all cursor-pointer"
-            >
-              <option value="">Не оценено</option>
-              <option value="flop">💀 Провал</option>
-              <option value="low">📉 Слабый актив</option>
-              <option value="average">📊 Норма</option>
-              <option value="viral">🔥 Хайп</option>
-            </select>
-          </div>
         </div>
         <textarea ref={textareaRef} value={pData.topic || localPost.topic || ""} onChange={(e) => updatePlatformData('topic', e.target.value)} onBlur={() => saveToDB(localPost)} placeholder="О чем будем писать?.." className="w-full font-black text-4xl md:text-5xl outline-none bg-transparent border-b-4 border-[var(--border-main)] focus:border-[var(--border-hover)] pb-4 text-[var(--text-main)] transition-all resize-none overflow-hidden leading-[1.1] placeholder-[var(--text-muted)] opacity-90 focus:opacity-100" rows={1}/>
       </div>
@@ -508,14 +488,50 @@ const PostCard = memo(function PostCard({ post, refreshPosts, refreshLibrary, on
                 <p className="text-xs font-bold text-emerald-600/60 uppercase tracking-[0.2em] mt-3">Контент упакован и ждет публикации</p>
               </div>
             </div>
+
+            {/* --- СИСТЕМА ОЦЕНКИ АКТИВА (Liquid Glass Design) --- */}
+            <div className="bg-[var(--bg-input)]/50 backdrop-blur-xl p-8 rounded-[32px] border border-[var(--border-main)] shadow-inner">
+              <label className="block text-[10px] font-black text-[var(--text-muted)] uppercase tracking-[0.2em] mb-5 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-[var(--accent)]" /> Аналитика эффективности
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { id: 'flop', label: 'Провал 💀', active: 'bg-gradient-to-br from-red-500 to-rose-600 text-white border-transparent shadow-[0_10px_30px_rgba(239,68,68,0.3)]', hover: 'hover:border-red-500/50 hover:text-red-400 hover:bg-red-500/5' },
+                  { id: 'low', label: 'Слабый 📉', active: 'bg-gradient-to-br from-orange-500 to-amber-500 text-white border-transparent shadow-[0_10px_30px_rgba(249,115,22,0.3)]', hover: 'hover:border-orange-500/50 hover:text-orange-400 hover:bg-orange-500/5' },
+                  { id: 'average', label: 'Норма 📊', active: 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white border-transparent shadow-[0_10px_30px_rgba(59,130,246,0.3)]', hover: 'hover:border-blue-500/50 hover:text-blue-400 hover:bg-blue-500/5' },
+                  { id: 'viral', label: 'Хайп 🔥', active: 'bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white border-transparent shadow-[0_10px_30px_rgba(217,70,239,0.3)]', hover: 'hover:border-purple-500/50 hover:text-purple-400 hover:bg-purple-500/5' }
+                ].map(lvl => (
+                  <button
+                    key={lvl.id}
+                    onClick={async () => {
+                      const updated = { ...localPost, engagement_level: lvl.id };
+                      setLocalPost(updated);
+                      // 🔥 Принудительно сохраняем без задержки и мгновенно обновляем графики!
+                      try {
+                        await api.updatePost(localPost.id, updated);
+                        if (refreshPosts) refreshPosts(); 
+                      } catch (err) { console.error("Ошибка сохранения оценки:", err); }
+                    }}
+                    className={`py-5 px-2 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 border-2 active:scale-95 ${
+                      localPost.engagement_level === lvl.id
+                        ? lvl.active
+                        : `bg-[var(--bg-card)] text-[var(--text-muted)] border-[var(--border-main)] ${lvl.hover}`
+                    }`}
+                  >
+                    {lvl.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {pData.finalText && (
-              <div className="bg-[var(--bg-input)] p-8 rounded-[32px] border border-[var(--border-main)] relative group shadow-inner">
+              <div className="bg-[var(--bg-input)] p-8 rounded-[32px] border border-[var(--border-main)] relative group shadow-inner mt-8">
                 <label className="text-[9px] font-black text-[var(--text-muted)] uppercase tracking-widest mb-4 block">Текст поста</label>
                 <div className="text-[var(--text-main)] text-sm font-bold whitespace-pre-wrap leading-relaxed">{pData.finalText}</div>
                 <button onClick={() => navigator.clipboard.writeText(pData.finalText)} className="absolute top-6 right-6 p-4 bg-[var(--bg-card)] rounded-xl text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-all hover:text-emerald-500 hover:border-emerald-500/50 shadow-sm border border-[var(--border-main)]"><Copy className="w-5 h-5"/></button>
               </div>
             )}
-            <button onClick={() => setStep(2)} className="w-full py-6 bg-[var(--bg-card)] border-2 border-[var(--border-main)] text-[var(--text-muted)] rounded-3xl font-black text-xs uppercase tracking-[0.3em] hover:text-[var(--text-main)] hover:border-[var(--border-hover)] transition-all">Вернуться к правкам</button>
+            <button onClick={() => setStep(2)} className="w-full mt-8 py-6 bg-[var(--bg-card)] border-2 border-[var(--border-main)] text-[var(--text-muted)] rounded-3xl font-black text-xs uppercase tracking-[0.3em] hover:text-[var(--text-main)] hover:border-[var(--border-hover)] transition-all">Вернуться к правкам</button>
           </div>
         )}
       </div>

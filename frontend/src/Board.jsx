@@ -1,12 +1,126 @@
-import React, { useState, useMemo, memo } from 'react';
+import React, { useState, useMemo, memo, useEffect } from 'react';
 import {
   Plus, X, ChevronLeft, ChevronRight, BookOpen,
-  Sparkles, ArrowRight, BrainCircuit, Activity, Download
+  Sparkles, ArrowRight, BrainCircuit, Activity, Download, PieChart
 } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from 'recharts';
 import api from './api';
 import PromptModal from './PromptModal';
 import PostCard from './PostCard';
 import { platformsInfo, getEmptyPlatform } from './constants';
+
+
+// --- ХУК ДЛЯ МАСШТАБИРОВАНИЯ (Stage 2) ---
+const useZoom = () => {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key === '=' || e.key === '+') {
+          e.preventDefault();
+          document.body.style.zoom = (parseFloat(document.body.style.zoom || 1) + 0.1).toFixed(1);
+        } else if (e.key === '-') {
+          e.preventDefault();
+          document.body.style.zoom = (parseFloat(document.body.style.zoom || 1) - 0.1).toFixed(1);
+        } else if (e.key === '0') {
+          e.preventDefault();
+          document.body.style.zoom = 1;
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+};
+
+// --- ДАШБОРД АНАЛИТИКИ (Stage 1) ---
+// --- КАСТОМНЫЙ ТУЛТИП ДЛЯ ГРАФИКА ---
+const CustomTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-[var(--bg-card)] border border-[var(--border-main)] p-5 rounded-3xl shadow-xl">
+        <p className="text-[var(--text-muted)] font-black uppercase tracking-[0.2em] text-[10px] mb-2">{payload[0].payload.name}</p>
+        <p className="text-4xl font-black" style={{ color: payload[0].payload.color }}>
+          {payload[0].value} <span className="text-sm text-[var(--text-muted)] font-bold uppercase tracking-widest">постов</span>
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
+// --- ДАШБОРД АНАЛИТИКИ (Универсальный под все темы) ---
+const AnalyticsModal = ({ isOpen, onClose, posts, monthName }) => {
+  if (!isOpen) return null;
+
+  const stats = useMemo(() => {
+    const counts = { flop: 0, low: 0, average: 0, viral: 0 };
+    posts.forEach(p => { if (p.engagement_level) counts[p.engagement_level]++; });
+    return [
+      { name: 'Провал 💀', count: counts.flop, color: '#ef4444' },
+      { name: 'Слабый 📉', count: counts.low, color: '#f97316' },
+      { name: 'Норма 📊', count: counts.average, color: '#3b82f6' },
+      { name: 'Хайп 🔥', count: counts.viral, color: '#d946ef' }
+    ];
+  }, [posts]);
+
+  return (
+    <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-2xl animate-in fade-in duration-500">
+      <div className="w-full max-w-5xl rounded-[48px] shadow-2xl overflow-hidden flex flex-col bg-[var(--bg-app)] border-2 border-[var(--border-main)]">
+        
+        {/* Шапка дашборда */}
+        <div className="p-10 border-b border-[var(--border-main)] flex justify-between items-center bg-[var(--bg-card)]">
+          <div className="flex items-center gap-6">
+            <div style={{ backgroundImage: 'linear-gradient(to top right, #3b82f6, #d946ef)' }} className="w-16 h-16 rounded-3xl flex items-center justify-center shadow-[0_0_20px_rgba(217,70,239,0.3)]">
+              <PieChart className="text-white w-8 h-8" />
+            </div>
+            <div>
+              <h2 className="text-3xl font-black uppercase tracking-tighter text-[var(--text-main)]">Аналитика актива</h2>
+              <p className="text-[11px] font-black text-[var(--text-muted)] uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
+                <Activity className="w-3 h-3 text-[#d946ef]" /> Отчет за {monthName}
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-14 h-14 bg-[var(--bg-input)] rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm border border-[var(--border-main)] text-[var(--text-muted)]">
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        
+        {/* Тело дашборда */}
+        <div className="p-10 flex flex-col md:flex-row gap-12 bg-[var(--bg-app)]">
+          {/* График */}
+          <div className="flex-1 h-[350px] bg-[var(--bg-card)] rounded-[40px] p-6 pt-10 border border-[var(--border-main)] shadow-inner relative">
+            <ResponsiveContainer width="100%" height="100%">
+              {/* Увеличен отступ снизу до 30, чтобы влезли буквы */}
+              <BarChart data={stats} margin={{ top: 0, right: 10, left: -20, bottom: 30 }} barSize={50}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-main)" vertical={false} />
+                <XAxis dataKey="name" tick={{fill: 'var(--text-muted)', fontSize: 11, fontWeight: 900}} axisLine={false} tickLine={false} dy={15}/>
+                <YAxis tick={{fill: 'var(--text-muted)', fontSize: 11}} axisLine={false} tickLine={false} dx={-10} allowDecimals={false}/>
+                <Tooltip content={<CustomTooltip />} cursor={{fill: 'var(--bg-input)', rx: 16}} />
+                <Bar dataKey="count" radius={[12, 12, 12, 12]}>
+                  {stats.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} className="transition-all duration-300 hover:opacity-80 cursor-pointer" />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          
+          {/* Плашки с цифрами */}
+          <div className="w-full md:w-1/3 flex flex-col gap-4 justify-center">
+            {stats.map((s) => (
+              <div key={s.name} className="group flex justify-between items-center p-6 bg-[var(--bg-card)] border border-[var(--border-main)] rounded-[28px] hover:border-[#3b82f6] transition-all duration-300 cursor-default shadow-sm">
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-[var(--text-muted)] group-hover:text-[var(--text-main)] transition-colors">{s.name}</span>
+                <span className="text-3xl font-black" style={{ color: s.color }}>
+                  {s.count}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AIImportModal = ({ isOpen, onClose, onImport }) => {
   const [jsonInput, setJsonInput] = useState('');
@@ -50,10 +164,15 @@ const AIImportModal = ({ isOpen, onClose, onImport }) => {
 };
 
 const Board = memo(function Board({ projectId, posts, refreshPosts, projectContext, refreshLibrary }) {
+  
+  useZoom();
+
   const [viewDate, setViewDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
   const [modal, setModal] = useState({ open: false, text: "" });
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+
+  const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
 
   const todayNum = new Date().getDate();
 
@@ -148,6 +267,7 @@ const Board = memo(function Board({ projectId, posts, refreshPosts, projectConte
     <div className="w-full h-full flex flex-col min-w-0">
       <PromptModal isOpen={modal.open} onClose={() => setModal({ open: false, text: "" })} promptText={modal.text} />
       <AIImportModal isOpen={isAIModalOpen} onClose={() => setIsAIModalOpen(false)} onImport={handleAIImportLogic} />
+      <AnalyticsModal isOpen={isAnalyticsOpen} onClose={() => setIsAnalyticsOpen(false)} posts={posts} monthName={monthName} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 items-center px-6 md:px-12 py-8 bg-[var(--bg-card)]/50 backdrop-blur-xl border-b-2 border-[var(--border-main)] sticky top-0 z-[40] gap-6 transition-colors duration-500">
         <div className="flex items-center gap-6">
@@ -178,6 +298,14 @@ const Board = memo(function Board({ projectId, posts, refreshPosts, projectConte
         </div>
 
         <div className="flex justify-end gap-4">
+          {/* НОВАЯ КНОПКА АНАЛИТИКИ */}
+          <button
+            onClick={() => setIsAnalyticsOpen(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-[var(--bg-input)] text-[var(--text-main)] rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-[#3b82f6]/20 hover:text-[#3b82f6] transition-all border border-[var(--border-main)] hover:border-[#3b82f6]/50 shadow-lg"
+          >
+            <PieChart className="w-4 h-4" /> Аналитика
+          </button>
+          
           <button
             onClick={handleExportMonth}
             className="text-purple-500 hover:text-purple-400 hover:bg-purple-500/10 p-3 rounded-full transition-colors"

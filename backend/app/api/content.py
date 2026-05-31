@@ -44,6 +44,8 @@ async def update_post(post_id: int, update_post: ContentPlan, session: Session =
     post.publish_date = update_post.publish_date
     post.platforms = update_post.platforms
     
+    post.engagement_level = update_post.engagement_level
+    
     session.add(post)
     session.commit()
     session.refresh(post)
